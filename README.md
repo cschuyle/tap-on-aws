@@ -72,7 +72,7 @@ kubectl config get-contexts
 ```
 If you have not set all the required environment variables, then you will be prompted for the values.
 
-Sit back and relax ... If successful, the entire install process should take approximately an hour.
+Sit back and relax ... If successful, the entire installation process should take approximately 20 minutes.
 
 
 ## 6. (Optional) Destroy the cluster
