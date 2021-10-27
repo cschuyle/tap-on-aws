@@ -3,7 +3,7 @@ export AWS_REGION=us-east-2
 export EKS_CLUSTER_NAME=my-cluster
 export EKS_CLUSTER_ROLE_ARN=arn:aws:iam::012345678901:role/cluster-name-role
 
-# external repo (e.g. DockerHub) values
+# external image repo (e.g. DockerHub) values
 export REPOSITORY=user/build-service # Assuming DockerHub account
 export REGISTRY_USERNAME=username
 export REGISTRY_PASSWORD=password
