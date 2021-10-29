@@ -22,7 +22,7 @@ findOrPrompt EKS_CLUSTER_NAME "EKS cluster name (choose a name)"
 set -x
 
 k8s_version=1.21
-instance_type=t2.xlarge # 4 CPUs, 16G RAM, 80G storage. I think this is among the smallest types that will support EKS.
+instance_type=t2.xlarge # 4 CPUs, 16G RAM, 80G storage per node. I think this is among the smallest types that will support EKS.
 node_count=4 # TODO 1 is too few, and 4 may be overkill. Try out a smaller value!
 
 eksctl create cluster \

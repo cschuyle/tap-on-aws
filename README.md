@@ -75,7 +75,9 @@ If you have not set all the required environment variables, then you will be pro
 Sit back and relax ... If successful, the entire installation process should take approximately 20 minutes.
 
 
-## 6. (Optional) Destroy the cluster
+## 6. [Exercise some TAP functionality](./doc/USING_TAP.md)
+
+## 7. (Optional) Destroy the cluster
 
 If you are sensitive to cost, when you do not need the TAP installation, you can destroy the entire AWS EKS cluster:
 

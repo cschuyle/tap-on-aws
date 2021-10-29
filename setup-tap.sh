@@ -113,6 +113,8 @@ then
   REG_BASE=${REGISTRY%%/*}
 fi
 
+### Prerequisites
+
 banner "Deploying kapp-controller"
 
 kapp deploy -a kc -f https://github.com/vmware-tanzu/carvel-kapp-controller/releases/latest/download/release.yml -y
@@ -132,13 +134,17 @@ banner "Deploying FluxCD source-controller"
 
 (kubectl get ns flux-system 2> /dev/null) || \
   kubectl create namespace flux-system
+
 (kubectl get clusterrolebinding default-admin 2> /dev/null) || \
 kubectl create clusterrolebinding default-admin \
   --clusterrole=cluster-admin \
   --serviceaccount=flux-system:default
+
 kapp deploy -a flux-source-controller -n flux-system -y \
   -f https://github.com/fluxcd/source-controller/releases/download/v0.15.4/source-controller.crds.yaml \
   -f https://github.com/fluxcd/source-controller/releases/download/v0.15.4/source-controller.deployment.yaml
+
+### Packages
 
 banner "Creating tap-install namespace"
 
@@ -177,11 +183,6 @@ banner "Deploying Cloud Native Runtime ..."
 
 cat > cnr-values.yaml <<EOF
 ---
-provider: "local"
-
-local_dns:
-  enable: "true"
-  domain: "vcap.me"
 EOF
 
 installLatest cloud-native-runtimes cnrs.tanzu.vmware.com cnr-values.yaml
@@ -190,26 +191,26 @@ installLatest cloud-native-runtimes cnrs.tanzu.vmware.com cnr-values.yaml
 # something like the following:
 #  kapp inspect -n tap-install -a cloud-native-runtimes-ctrl -y
 
-banner "Setting CNR (knative) domain to vcap.me ..."
-
-cat > vcap-me.yaml <<EOF
-apiVersion: v1
-data:
-  vcap.me: |
-kind: ConfigMap
-metadata:
-  name: config-domain
-  namespace: knative-serving
-EOF
-
-kubectl apply -f vcap-me.yaml
+#banner "Setting CNR (knative) domain to vcap.me ..."
+#
+#cat > vcap-me.yaml <<EOF
+#apiVersion: v1
+#data:
+#  vcap.me: |
+#kind: ConfigMap
+#metadata:
+#  name: config-domain
+#  namespace: knative-serving
+#EOF
+#
+#kubectl apply -f vcap-me.yaml
 
 banner "Deploying App Accelerator ..."
 cat > app-accelerator-values.yaml <<EOF
 ---
 server:
-  # Set this service_type to "NodePort" for local clusters like minikube.
-  service_type: "NodePort"
+  # Set the engine.service_type to "NodePort" for local clusters like minikube or kind.
+  service_type: "LoadBalancer"
   watched_namespace: "default"
 EOF
 
@@ -291,6 +292,8 @@ banner "Installing Supply Chain Security Tools - Store"
 cat > scst-store-values.yaml <<EOF
 ---
 db_password: "$DB_PASSWORD"
+app_service_type: "LoadBalancer"
+db_host: "metadata-store-db"
 EOF
 
 installLatest metadata-store \
@@ -368,6 +371,13 @@ kubectl run busybox --image=busybox --restart=Never -- sleep 5
 kubectl delete pod cosign --force --grace-period=0 2> /dev/null || true
 kubectl delete pod busybox --force --grace-period=0 2> /dev/null || true
 
+# TODO Should we do this verification too as the installation guide suggests
+#set +e
+#kubectl run cosign-fail --image=gcr.io/projectsigstore/cosign:v0.3.0 --command -- sleep 900
+#if [[ $? ne 0 ]] ; then
+#  exit 1
+#fi
+
 banner "Installing Supply Chain Security Tools - Scan"
 
 cat <<EOF | kubectl apply -f -
@@ -412,7 +422,9 @@ STORE_URL=$(
   xargs kubectl -n metadata-store get \
     -o jsonpath='{.spec.ports[].name}{"://"}{.metadata.name}{"."}{.metadata.namespace}{".svc.cluster.local:"}{.spec.ports[].port}'
   )
+
 STORE_CA=$(kubectl get secret app-tls-cert -n metadata-store -o json | jq -r '.data."ca.crt"' | base64 -d | sed -e 's/^/  /')
+
 cat > scst-scan-controller-values.yaml <<EOF
 ---
 metadataStoreUrl: $STORE_URL
@@ -424,6 +436,7 @@ EOF
 STORE_TOKEN=$(
   kubectl get secret $(kubectl get serviceaccount -n metadata-store metadata-store-read-write-client -o json | jq -r '.secrets[0].name') -n metadata-store -o json | jq -r '.data.token' | base64 -d
 )
+
 cat > metadata-store-secret.yaml <<EOF
 ---
 apiVersion: v1
@@ -471,7 +484,8 @@ fi
 tanzu imagepullsecret add registry-credentials \
   --registry "$REG_CRED_HOST" \
   --username "$REG_USERNAME" \
-  --password "$REG_PASSWORD" || true
+  --password "$REG_PASSWORD" \
+  --namespace default || true
 
 cat > developer-namespace-setup.yaml <<EOF
 apiVersion: v1
@@ -539,10 +553,10 @@ kubectl patch serviceaccount default \
   -p '{"imagePullSecrets": [{"name": "registry-credentials"}, {"name": "tap-registry"}]}'
 
 
-banner "Setting up port forwarding for App Accelerator and App Live View"
-
-kubectl port-forward service/acc-ui-server 8877:80 -n accelerator-system &
-kubectl port-forward service/application-live-view-5112 5112:5112 -n app-live-view &
+#banner "Setting up port forwarding for App Accelerator and App Live View"
+#
+#kubectl port-forward service/acc-ui-server 8877:80 -n accelerator-system &
+#kubectl port-forward service/application-live-view-5112 5112:5112 -n app-live-view &
 
 cat <<EOF
 
