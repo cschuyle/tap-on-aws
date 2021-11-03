@@ -65,8 +65,6 @@ rm -f tap-values.yaml
 cat > tap-values.yaml <<EOF
 profile: dev-light
 
-install_cert_manager: false
-
 buildservice:
   # e.g. us-east4-docker.pkg.dev/some-project-id/test-private-repo/apps
   kp_default_repository: "$REGISTRY"
@@ -77,18 +75,22 @@ buildservice:
 
 ootb_supply_chain_basic:
   registry:
-    # Name of the registry server where application images should be pushed to (default index.docker.io)
-    # e.g. us-east4-docker.pkg.dev
     server: index.docker.io
-    # Name of the repository in the image registry server where the application images from the workloads should be pushed to (required)
-    # e.g. some-project-id/test-private-repo/apps
+    repository: "$REGISTRY"
+
+ootb_supply_chain_testing:
+  registry:
+    server: index.docker.io
+    repository: "$REGISTRY"
+
+ootb_supply_chain_testing_scanning:
+  registry:
+    server: index.docker.io
     repository: "$REGISTRY"
 
 tap_gui:
   service_type: LoadBalancer
 EOF
-
-LEFT OFF HERE: registry.server
 
 banner "Removing any existing k8s objects or tanzu packages"
 
