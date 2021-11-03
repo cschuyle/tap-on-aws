@@ -8,6 +8,6 @@ export REG_USERNAME=username
 export REG_PASSWORD=password
 
 # TAP values
+export TAP_VERSION=0.3.0-build.6
 export TN_USERNAME=user@somewhere.com
 export TN_PASSWORD=password
-export DB_PASSWORD=persistent-password # Must be the same between deploys to the same cluster

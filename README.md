@@ -1,13 +1,18 @@
 # TAP on AWS
 
+_This repo borrows heavily from Neil Winton's <https://github.com/ndwinton/tap-setup-scripts>._
+
 Automate the installation of Tanzu Application Platform (TAP) running on AWS EKS (Elastic Kubernetes Service)
 
-Based on <https://github.com/ndwinton/tap-setup-scripts>
+The scripts attempt to automate the install instructions:
+<https://docs-staging.vmware.com/en/VMware-Tanzu-Application-Platform/0.3/tap-0-3/GUID-install-intro.html>
+
+This was done after the release of 0.3.0-build.6
 
 ## 1. Prerequisites
 
 The Tanzu-specific prerequisites are too numerous and detailed to repeat, and are specified in detail here:
-<https://docs.vmware.com/en/VMware-Tanzu-Application-Platform/0.2/tap-0-2/GUID-install-intro.html>
+<https://docs-staging.vmware.com/en/VMware-Tanzu-Application-Platform/0.3/tap-0-3/GUID-install-intro.html>
 You should read and follow the prerequisites first.
 
 The TL;DR is:
@@ -32,7 +37,7 @@ If you wish to store your environment variables locally in order to avoid enteri
 edit the new file, and `direnv allow` it.
 
 Of course, you can use the template file as documentation to set your environment variables by whatever
-mechanism you choose.
+mechanism you choose.   
 
 You might need to read forward a little bit to figure out what all the values are.
 
@@ -49,7 +54,9 @@ aws configure
 ```
 Follow the prompts, filling in your AWS IAM's credentials.
 
-## 4. Create an EKS cluster on AWS
+## 4a. Create an EKS cluster on AWS
+
+**To create a brand-new cluster:**
 
 ```bash
 ./create-eks-cluster.sh
@@ -65,10 +72,25 @@ and also sets the current context to it.  You can verify that by typing:
 kubectl config get-contexts
 ```
 
+4b. Use an existing EKS cluster
+
+**To connect to an existing cluster:**
+
+_NOTE: For instructions on how to grant permissions to a cluster for a new user, see this: <https://docs.aws.amazon.com/eks/latest/userguide/add-user-role.html>_
+
+Navigate the AWS Console Elastic Kubernetes Service page, click on *Clusters*, and find the name of the cluster
+you want to install TAP into. Then:
+```
+aws eks update-kubeconfig <CLUSTER_NAME>
+```
+
 ## 5. Install TAP in the EKS cluster
 
+Execute the following scripts in order:
 ```
-./setup-tap.sh
+./1.install-tanzu-cli.sh
+./2.prerequisites.sh
+./3.setup-tap.sh
 ```
 If you have not set all the required environment variables, then you will be prompted for the values.
 
@@ -84,5 +106,3 @@ If you are sensitive to cost, when you do not need the TAP installation, you can
 ```
 ./delete-eks-cluster.sh
 ```
-There is a delay of a couple of minutes after the command completes, until the cluster is completely destroyed.
-This means that immediately trying to re-create the cluster will not work.
